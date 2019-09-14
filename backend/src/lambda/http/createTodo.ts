@@ -10,26 +10,23 @@ const docClient = createDynamoDBClient();
 const TODOS_TABLE = process.env.TODOS_TABLE;
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const newTodo: CreateTodoRequest = JSON.parse(event.body)
+  const newTodo: CreateTodoRequest = JSON.parse(event.body);
 
-  console.log('Processing event: ', event)
-
-  const authorization = event.headers.Authorization
-  const split = authorization.split(' ')
-  const jwtToken = split[1]
+  console.log('Processing event: ', event);
 
   // const newItem = await createGroup(newGroup, jwtToken)
-
+  
   const itemId = uuid.v4()
-  const userId = getUserId(jwtToken);
+  const userId = getUserId(event);
 
   const newItem: TodoItem = {
-    todoId: itemId,
     userId,
+    todoId: itemId,
+    createdAt: new Date().toISOString(),
     name: newTodo.name,
     dueDate: newTodo.dueDate,
-    createdAt: new Date().toISOString(),
-    done: false
+    done: false,
+    attachmentUrl: 'test'
   }
 
   await docClient.put({

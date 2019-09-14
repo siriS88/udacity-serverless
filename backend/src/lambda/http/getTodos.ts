@@ -3,28 +3,15 @@ import 'source-map-support/register'
 import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda';
 import * as AWS from 'aws-sdk';
 
-const docClient = new AWS.DynamoDB.DocumentClient();
+const docClient = createDynamoDBClient();
+const TODOS_TABLE = process.env.TODOS_TABLE;
 
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   // TODO: Get all TODO items for a current user
   console.log('Caller event', event)
-  const userId = event.pathParameters.userId
-  const validGroupId = await userExists(userId)
 
-  if (!validGroupId) {
-    return {
-      statusCode: 404,
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({
-        error: 'User does not exist'
-      })
-    }
-  }
-
-  const images = await getTodosPerUser(userId)
+  const todos = await getTodosPerUser()
 
   return {
     statusCode: 201,
@@ -32,35 +19,28 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
       'Access-Control-Allow-Origin': '*'
     },
     body: JSON.stringify({
-      items: images
+      items: todos
     })
   }
 
 }
 
-async function userExists(userId: string) {
-  const result = await docClient
-    .get({
-      TableName: usersTable,
-      Key: {
-        id: userId
-      }
-    })
-    .promise()
-
-  console.log('Get user: ', result)
-  return !!result.Item
-}
-
-async function getTodosPerUser(userId: string) {
-  const result = await docClient.query({
-    TableName: todosTable,
-    KeyConditionExpression: 'userId = :userId',
-    ExpressionAttributeValues: {
-      ':userId': userId
-    },
-    ScanIndexForward: false
+async function getTodosPerUser() {
+  const result = await docClient.scan({
+    TableName: TODOS_TABLE,
   }).promise()
 
   return result.Items
+}
+
+function createDynamoDBClient() {
+  if (process.env.IS_OFFLINE) {
+    console.log('Creating a local DynamoDB instance')
+    return new AWS.DynamoDB.DocumentClient({
+      region: 'localhost',
+      endpoint: 'http://localhost:8000'
+    })
+  }
+
+  return new AWS.DynamoDB.DocumentClient()
 }

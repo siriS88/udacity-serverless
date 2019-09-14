@@ -12,9 +12,9 @@ plugins:
 provider:
   name: aws
   runtime: nodejs8.10
-
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-west-2'}
+
   environment:
     TODOS_TABLE: Todos-${self:provider.stage}
 
@@ -31,6 +31,8 @@ custom:
     port: 3003
 
   dynamodb:
+    stages:
+      - ${opt:stage, 'dev'}
     start:
       port: 8000
       inMemory: true
@@ -48,16 +50,17 @@ custom:
         schema: ${file(models/create-todo-request.json)}
 
 functions:
-  Auth:
+  RS256Auth:
     handler: src/lambda/auth/rs256Auth0Authorizer.handler
 
-  # TODO: Configure this function
+    # TODO: Configure this function
   GetTodos:
     handler: src/lambda/http/getTodos.handler
     events:
       - http:
           method: get
           path: todos
+          cors: true
 
   # TODO: Configure this function
   CreateTodo:
@@ -75,40 +78,16 @@ functions:
             requestModels:
               'application/json': TodoRequest
 
-  # TODO: Configure this function
-  UpdateTodo:
-    handler: src/lambda/http/updateTodo.handler
-    events:
-      - http:
-          method: patch
-          path: todos/{todoId}
-
-  # TODO: Configure this function
-  DeleteTodo:
-    handler: src/lambda/http/deleteTodo.handler
-    events:
-      - http:
-          method: delete
-          path: todos/{todoId}
-
-  # TODO: Configure this function
-  GenerateUploadUrl:
-    handler: src/lambda/http/generateUploadUrl.handler
-    events:
-      - http:
-          method: post
-          path: todos/{todoId}/attachment
-
 resources:
   Resources:
     TodosDynamoDBTable:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: id
+          - AttributeName: todoId
             AttributeType: S
         KeySchema:
-          - AttributeName: id
+          - AttributeName: todoId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:provider.environment.TODOS_TABLE}
