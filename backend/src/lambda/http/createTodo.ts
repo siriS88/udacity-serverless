@@ -1,40 +1,15 @@
 import 'source-map-support/register'
 import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
-import * as AWS from 'aws-sdk';
-import * as uuid from 'uuid';
-import { CreateTodoRequest } from '../../requests/CreateTodoRequest';
-import { TodoItem } from '../../models/TodoItem';
-import { getUserId } from '../utils';
-
-const docClient = createDynamoDBClient();
-const TODOS_TABLE = process.env.TODOS_TABLE;
+import { createTodo } from '../../businessLogic/todos';
+import {CreateTodoRequest} from '../../requests/CreateTodoRequest';
+import {getUserId} from '../utils';
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const newTodo: CreateTodoRequest = JSON.parse(event.body);
-
-  console.log('Processing event: ', event);
-
-  // const newItem = await createGroup(newGroup, jwtToken)
-  const dueDateTimestamp = Date.parse(newTodo.dueDate);
-
-  const itemId = uuid.v4()
   const userId = getUserId(event);
-
-  const newItem: TodoItem = {
-    userId,
-    todoId: itemId,
-    createdAt: new Date().toISOString(),
-    name: newTodo.name || 'New Todo',
-    dueDate: new Date(dueDateTimestamp).toISOString(),
-    done: false,
-    attachmentUrl: 'test'
-  }
+  console.log('Processing event: ', event);
   try {
-    await docClient.put({
-      TableName: TODOS_TABLE,
-      Item: newItem
-    }).promise();
-
+    const todoAdded = await createTodo(newTodo, userId);
     return {
       statusCode: 201,
       headers: {
@@ -42,32 +17,17 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
         'Access-Control-Allow-Credentials': true
       },
       body: JSON.stringify({
-        item: newItem
+        item: todoAdded
       })
     }
 
   } catch (e) {
     console.log(e)
     return {
-      statusCode: 500,
+      statusCode: e.status || 500,
       body: JSON.stringify({
-        error: e
+        error: `Failed to create todo due to: ${e}`
       })
     }
-
   }
-
-
-}
-
-function createDynamoDBClient() {
-  if (process.env.IS_OFFLINE) {
-    console.log('Creating a local DynamoDB instance')
-    return new AWS.DynamoDB.DocumentClient({
-      region: 'localhost',
-      endpoint: 'http://localhost:8000'
-    })
-  }
-
-  return new AWS.DynamoDB.DocumentClient()
 }

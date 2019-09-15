@@ -1,20 +1,13 @@
 import 'source-map-support/register'
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda';
-import * as AWS from 'aws-sdk';
-import { getUserId } from '../utils';
-
-const docClient = createDynamoDBClient();
-const TODOS_TABLE = process.env.TODOS_TABLE;
-const userIdIndex = process.env.USER_ID_INDEX;
-console.log(userIdIndex);
+import { getAllTodosForUser } from '../../businessLogic/todos';
+import {getUserId} from '../utils';
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  // TODO: Get all TODO items for a current user
   console.log('Caller event', event)
   const userId = getUserId(event);
-
-  const todos = await getTodosPerUser(userId);
+  const todos = await getAllTodosForUser(userId);
 
   return {
     statusCode: 201,
@@ -26,30 +19,4 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     })
   }
 
-}
-
-async function getTodosPerUser(userId) {
-
-  const result = await docClient.query({
-    TableName: TODOS_TABLE,
-    IndexName: userIdIndex,
-    KeyConditionExpression: 'userId = :userId',
-    ExpressionAttributeValues: {
-      ':userId': userId
-    }
-  }).promise()
-
-  return result.Items
-}
-
-function createDynamoDBClient() {
-  if (process.env.IS_OFFLINE) {
-    console.log('Creating a local DynamoDB instance')
-    return new AWS.DynamoDB.DocumentClient({
-      region: 'localhost',
-      endpoint: 'http://localhost:8000'
-    })
-  }
-
-  return new AWS.DynamoDB.DocumentClient()
 }
