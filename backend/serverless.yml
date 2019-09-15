@@ -10,6 +10,9 @@ plugins:
   - serverless-dynamodb-local
   - serverless-offline
 
+package:
+  individually: true
+
 provider:
   name: aws
   runtime: nodejs8.10
@@ -30,11 +33,6 @@ provider:
     - Effect: Allow
       Action:
         - codedeploy:*
-      Resource:
-        - '*'
-    - Effect: Allow
-      Action:
-        - xray:*
       Resource:
         - '*'
 
