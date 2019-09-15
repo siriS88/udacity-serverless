@@ -4,6 +4,7 @@ service:
 plugins:
   - serverless-webpack
   - serverless-iam-roles-per-function
+  - serverless-plugin-canary-deployments
   - serverless-reqvalidator-plugin
   - serverless-aws-documentation
   - serverless-dynamodb-local
@@ -14,6 +15,10 @@ provider:
   runtime: nodejs8.10
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-west-2'}
+  
+  tracing:
+    lambda: true
+    apiGateway: true
 
   environment:
     TODOS_TABLE: Todos-${self:provider.stage}
@@ -22,6 +27,11 @@ provider:
     SIGNED_URL_EXPIRATION: 300
 
   iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - codedeploy:*
+      Resource:
+        - '*'
     - Effect: Allow
       Action:
         - dynamodb:Scan
@@ -76,6 +86,9 @@ functions:
           method: get
           path: todos
           cors: true
+    deploymentSettings:
+      type: Linear10PercentEvery1Minute
+      alias: Live
 
   CreateTodo:
     handler: src/lambda/http/createTodo.handler
@@ -91,6 +104,9 @@ functions:
             description: Create a new todo
             requestModels:
               'application/json': TodoRequest
+    deploymentSettings:
+      type: Linear10PercentEvery1Minute
+      alias: Live
 
   UpdateTodo:
     handler: src/lambda/http/updateTodo.handler
@@ -106,6 +122,9 @@ functions:
             description: Update an existing todo
             requestModels:
               'application/json': UpdateTodoRequest
+    deploymentSettings:
+      type: Linear10PercentEvery1Minute
+      alias: Live
 
   DeleteTodo:
     handler: src/lambda/http/deleteTodo.handler
@@ -115,6 +134,9 @@ functions:
           path: todos/{todoId}
           cors: true
           authorizer: RS256Auth
+    deploymentSettings:
+      type: Linear10PercentEvery1Minute
+      alias: Live
 
   GenerateUploadUrl:
     handler: src/lambda/http/generateUploadUrl.handler
@@ -124,6 +146,9 @@ functions:
           path: todos/{todoId}/attachment
           cors: true
           authorizer: RS256Auth
+    deploymentSettings:
+      type: Linear10PercentEvery1Minute
+      alias: Live
 
 resources:
   Resources:
