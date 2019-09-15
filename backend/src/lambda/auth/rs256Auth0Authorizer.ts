@@ -2,7 +2,7 @@
 import { CustomAuthorizerEvent, CustomAuthorizerResult } from 'aws-lambda';
 import 'source-map-support/register';
 import { verify } from 'jsonwebtoken';
-import { JwtToken } from '../../auth/JwtToken';
+import { JwtPayload } from '../../auth/JwtPayload';
 
 const APP_CERTIFICATE = `-----BEGIN CERTIFICATE-----
 MIIDBzCCAe+gAwIBAgIJY9qZIXDnoB09MA0GCSqGSIb3DQEBCwUAMCExHzAdBgNV
@@ -64,7 +64,7 @@ export const handler = async (event: CustomAuthorizerEvent): Promise<CustomAutho
   }
 }
 
-function verifyToken(authHeader): JwtToken {
+function verifyToken(authHeader): JwtPayload {
   if (!authHeader)
     throw new Error('No authentication header')
 
@@ -82,6 +82,6 @@ function verifyToken(authHeader): JwtToken {
     token,           // Token from an HTTP header to validate
     APP_CERTIFICATE,            // A certificate copied from Auth0 website
     { algorithms: ['RS256'] } // We need to specify that we use the RS256 algorithm
-  ) as JwtToken
+  ) as JwtPayload
   return jwtToken;
 }
