@@ -1,4 +1,4 @@
-# Serverless TODO
+# Serverless TODOS application
 
 This project creates an application that allows creating, updating, deleting TODOS for a user as well as listing todos them. You can add an optional image attachment to a TODO. It uses the backend starter code and client provided by udacity cloud developer nanodegree. The application is built using serverless framework with aws as the provider.  
 
