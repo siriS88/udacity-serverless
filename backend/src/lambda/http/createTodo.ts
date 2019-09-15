@@ -15,7 +15,8 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   console.log('Processing event: ', event);
 
   // const newItem = await createGroup(newGroup, jwtToken)
-  
+  const dueDateTimestamp = Date.parse(newTodo.dueDate);
+
   const itemId = uuid.v4()
   const userId = getUserId(event);
 
@@ -24,7 +25,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     todoId: itemId,
     createdAt: new Date().toISOString(),
     name: newTodo.name,
-    dueDate: newTodo.dueDate,
+    dueDate: new Date(dueDateTimestamp).toISOString(),
     done: false,
     attachmentUrl: 'test'
   }
