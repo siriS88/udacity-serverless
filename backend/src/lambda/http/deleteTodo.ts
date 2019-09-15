@@ -1,8 +1,10 @@
 import 'source-map-support/register';
-import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda';
+import * as middy from 'middy';
+import { cors } from 'middy/middlewares';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { deleteTodo } from '../../businessLogic/todos';
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const todoId = event.pathParameters.todoId;
 
   try {
@@ -25,4 +27,10 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
       })
     }
   }
-}
+})
+
+handler.use(
+  cors({
+    credentials: true
+  })
+);
