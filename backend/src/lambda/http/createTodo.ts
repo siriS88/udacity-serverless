@@ -24,27 +24,40 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     userId,
     todoId: itemId,
     createdAt: new Date().toISOString(),
-    name: newTodo.name,
+    name: newTodo.name || 'New Todo',
     dueDate: new Date(dueDateTimestamp).toISOString(),
     done: false,
     attachmentUrl: 'test'
   }
+  try {
+    await docClient.put({
+      TableName: TODOS_TABLE,
+      Item: newItem
+    }).promise();
 
-  await docClient.put({
-    TableName: TODOS_TABLE,
-    Item: newItem
-  }).promise()
+    return {
+      statusCode: 201,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true
+      },
+      body: JSON.stringify({
+        item: newItem
+      })
+    }
 
-  return {
-    statusCode: 201,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': true
-    },
-    body: JSON.stringify({
-      newItem
-    })
+  } catch (e) {
+    console.log(e)
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: e
+      })
+    }
+
   }
+
+
 }
 
 function createDynamoDBClient() {
